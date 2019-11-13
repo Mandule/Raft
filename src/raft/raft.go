@@ -87,6 +87,38 @@ type LogEntry struct {
 	Term    int
 }
 
+//
+// example RequestVote RPC arguments structure.
+//
+type RequestVoteArgs struct {
+	// Your data here.
+	Term         int //Candidate's term
+	CandidateId  int //Candidate requesting vote
+	LastLogIndex int //index of candidate's last log entry
+	LastLogTerm  int //term of candidate's last log entry
+}
+
+//
+// example RequestVote RPC reply structure.
+//
+type RequestVoteReply struct {
+	// Your data here.
+	Term        int  //currentTerm, for candidate to update itself
+	VoteGranted bool //true means candidate received vote
+}
+
+//
+//example AppendEntry RPC arguments structure
+//
+type AppendEntryArgs struct {
+	Term         int
+	LeaderId     int
+	PrevLogIndex int
+	PrevLogTerm  int
+	Entries      []LogEntry
+	LeaderCommit int
+}
+
 // Append Entries Reply
 type AppendEntryReply struct {
 	Term        int
@@ -174,8 +206,8 @@ func (rf *Raft) restartTime() {
 //	when peer timeout, it changes to be a candidate and sentRequestVote
 //
 func (rf *Raft) Timeout() {
-	//rf.mu.Lock()
-	//defer rf.mu.Unlock()
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
 	// when rf is not the leader, then go to candidate and leader election.
 	if rf.state != "LEADER" {
 		rf.state = "CANDIDATE"
@@ -183,28 +215,7 @@ func (rf *Raft) Timeout() {
 		rf.voteCount = 1
 		rf.votedFor = rf.me
 		rf.persist()
-		args := RequestVoteArgs{
-			Term:         rf.currentTerm,
-			CandidateId:  rf.me,
-			LastLogIndex: len(rf.logs) - 1,
-		}
-
-		if args.LastLogIndex >= 0 {
-			args.LastLogTerm = rf.logs[len(rf.logs)-1].Term
-		}
-
-		for server, _ := range rf.peers {
-			if server == rf.me {
-				continue
-			}
-			go func(server int, args RequestVoteArgs) {
-				var reply RequestVoteReply
-				success := rf.peers[server].Call("Raft.RequestVote", args, &reply)
-				if success {
-					rf.countVote(reply)
-				}
-			}(server, args)
-		}
+		rf.SendRequestVote()
 	} else { // when rf is the leader, then send heartbeat.
 		rf.SendAppendEntries()
 	}
@@ -213,15 +224,96 @@ func (rf *Raft) Timeout() {
 }
 
 //
-// vote result handler
+// example RequestVote RPC handler.
 //
-func (rf *Raft) countVote(reply RequestVoteReply) {
+func (rf *Raft) RequestVote(args RequestVoteArgs, reply *RequestVoteReply) {
+	// Your code here.
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	if reply.Term < rf.currentTerm {
+	canVote := true
+
+	if len(rf.logs) > 0 {
+		// candidate's logs is older than follower
+		if rf.logs[len(rf.logs)-1].Term > args.LastLogTerm {
+			canVote = false
+		}
+		// candidate's logs is shorter than follower
+		if rf.logs[len(rf.logs)-1].Term == args.LastLogTerm && len(rf.logs)-1 > args.LastLogIndex {
+			canVote = false
+		}
+	}
+
+	if args.Term < rf.currentTerm {
+		reply.Term = rf.currentTerm
+		reply.VoteGranted = false
 		return
 	}
+
+	if args.Term == rf.currentTerm {
+		if rf.votedFor == -1 && canVote {
+			rf.votedFor = args.CandidateId
+			rf.persist()
+		}
+		reply.Term = rf.currentTerm
+		reply.VoteGranted = rf.votedFor == args.CandidateId
+		return
+	}
+
+	if args.Term > rf.currentTerm {
+		rf.state = "FOLLOWER"
+		rf.currentTerm = args.Term
+		rf.votedFor = -1
+
+		if canVote {
+			rf.votedFor = args.CandidateId
+			rf.persist()
+		}
+
+		rf.restartTime()
+
+		reply.Term = args.Term
+		reply.VoteGranted = rf.votedFor == args.CandidateId
+
+		return
+	}
+
+}
+
+//
+//	Candidate ask for vote
+//
+func (rf *Raft) SendRequestVote() {
+	args := RequestVoteArgs{
+		Term:         rf.currentTerm,
+		CandidateId:  rf.me,
+		LastLogIndex: len(rf.logs) - 1,
+	}
+
+	if args.LastLogIndex >= 0 {
+		args.LastLogTerm = rf.logs[len(rf.logs)-1].Term
+	}
+
+	for server, _ := range rf.peers {
+		if server == rf.me {
+			continue
+		}
+		go func(server int, args RequestVoteArgs) {
+			var reply RequestVoteReply
+			success := rf.peers[server].Call("Raft.RequestVote", args, &reply)
+			if success {
+				rf.handleRequestVoteReply(reply)
+			}
+		}(server, args)
+	}
+}
+
+//
+// vote result handler
+//
+func (rf *Raft) handleRequestVoteReply(reply RequestVoteReply) {
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
 
 	if reply.Term > rf.currentTerm {
 		rf.currentTerm = reply.Term
@@ -325,7 +417,7 @@ func (rf *Raft) SendAppendEntries() {
 			var reply AppendEntryReply
 			success := rf.peers[server].Call("Raft.AppendEntries", args, &reply)
 			if success {
-				rf.handleAppendEntries(server, reply)
+				rf.handleAppendEntriesReply(server, reply)
 			}
 		}(peer, args)
 	}
@@ -334,7 +426,7 @@ func (rf *Raft) SendAppendEntries() {
 //
 //	Handle AppendEntry result
 //
-func (rf *Raft) handleAppendEntries(server int, reply AppendEntryReply) {
+func (rf *Raft) handleAppendEntriesReply(server int, reply AppendEntryReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 	if rf.state != "LEADER" {
@@ -371,127 +463,6 @@ func (rf *Raft) handleAppendEntries(server int, reply AppendEntryReply) {
 }
 
 func (rf *Raft) commit() {
-	rf.mu.Lock()
-	defer rf.mu.Unlock()
-	for i := rf.lastApplied + 1; i <= rf.commitIndex; i++ {
-		args := ApplyMsg{
-			Index:   i + 1,
-			Command: rf.logs[i].Command,
-		}
-		rf.applyCh <- args
-	}
-	rf.lastApplied = rf.commitIndex
-}
-
-//
-//example AppendEntry RPC arguments structure
-//
-type AppendEntryArgs struct {
-	Term         int
-	LeaderId     int
-	PrevLogIndex int
-	PrevLogTerm  int
-	Entries      []LogEntry
-	LeaderCommit int
-}
-
-//
-// example RequestVote RPC arguments structure.
-//
-type RequestVoteArgs struct {
-	// Your data here.
-	Term         int //Candidate's term
-	CandidateId  int //Candidate requesting vote
-	LastLogIndex int //index of candidate's last log entry
-	LastLogTerm  int //term of candidate's last log entry
-}
-
-//
-// example RequestVote RPC reply structure.
-//
-type RequestVoteReply struct {
-	// Your data here.
-	Term        int  //currentTerm, for candidate to update itself
-	VoteGranted bool //true means candidate received vote
-}
-
-//
-// example RequestVote RPC handler.
-//
-func (rf *Raft) RequestVote(args RequestVoteArgs, reply *RequestVoteReply) {
-	// Your code here.
-	rf.mu.Lock()
-	defer rf.mu.Unlock()
-
-	canVote := true
-
-	if len(rf.logs) > 0 {
-		// candidate's logs is older than follower
-		if rf.logs[len(rf.logs)-1].Term > args.LastLogTerm {
-			canVote = false
-		}
-		// candidate's logs is shorter than follower
-		if rf.logs[len(rf.logs)-1].Term == args.LastLogTerm && len(rf.logs)-1 > args.LastLogIndex {
-			canVote = false
-		}
-	}
-
-	if args.Term < rf.currentTerm {
-		reply.Term = rf.currentTerm
-		reply.VoteGranted = false
-		return
-	}
-
-	if args.Term == rf.currentTerm {
-		if rf.votedFor == -1 && canVote {
-			rf.votedFor = args.CandidateId
-			rf.persist()
-		}
-		reply.Term = rf.currentTerm
-		reply.VoteGranted = rf.votedFor == args.CandidateId
-		return
-	}
-
-	if args.Term > rf.currentTerm {
-		rf.state = "FOLLOWER"
-		rf.currentTerm = args.Term
-		rf.votedFor = -1
-
-		if canVote {
-			rf.votedFor = args.CandidateId
-			rf.persist()
-		}
-
-		rf.restartTime()
-
-		reply.Term = args.Term
-		reply.VoteGranted = rf.votedFor == args.CandidateId
-
-		return
-	}
-
-}
-
-//
-// example code to send a RequestVote RPC to a server.
-// server is the index of the target server in rf.peers[].
-// expects RPC arguments in args.
-// fills in *reply with RPC reply, so caller should
-// pass &reply.
-// the types of the args and reply passed to Call() must be
-// the same as the types of the arguments declared in the
-// handler function (including whether they are pointers).
-//
-// returns true if labrpc says the RPC was delivered.
-//
-// if you're having trouble getting RPC to work, check that you've
-// capitalized all field names in structs passed over RPC, and
-// that the caller passes the address of the reply struct with &, not
-// the struct itself.
-//
-func (rf *Raft) sendRequestVote(server int, args RequestVoteArgs, reply *RequestVoteReply) bool {
-	ok := rf.peers[server].Call("Raft.RequestVote", args, reply)
-	return ok
 }
 
 //

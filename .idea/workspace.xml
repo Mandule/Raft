@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="558ac743-39b1-4d9c-ab46-81873a9bc231" name="Default" comment="">
+    <list default="true" id="558ac743-39b1-4d9c-ab46-81873a9bc231" name="Default" comment="done">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/raft/raft.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/raft/raft.go" afterDir="false" />
     </list>
@@ -71,7 +71,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Go Test.test_test.go">
+  <component name="RunManager" selected="Go Test.test_test.go (1)">
     <configuration default="true" type="Applet" factoryName="Applet">
       <option name="HTML_USED" value="false" />
       <option name="WIDTH" value="400" />
@@ -181,17 +181,6 @@
       <pattern value="^TestInitialElection$" />
       <method v="2" />
     </configuration>
-    <configuration name="TestInitialElection in raft" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
-      <module name="NJU-DisSys-2017" />
-      <working_directory value="$PROJECT_DIR$/src/raft" />
-      <framework value="gotest" />
-      <kind value="PACKAGE" />
-      <package value="raft" />
-      <directory value="$PROJECT_DIR$/" />
-      <filePath value="$PROJECT_DIR$/" />
-      <pattern value="^TestInitialElection$" />
-      <method v="2" />
-    </configuration>
     <configuration name="TestReElection in raft" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="NJU-DisSys-2017" />
       <working_directory value="$PROJECT_DIR$/src/raft" />
@@ -201,6 +190,15 @@
       <directory value="$PROJECT_DIR$/" />
       <filePath value="$PROJECT_DIR$/" />
       <pattern value="^TestReElection$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="test_test.go (1)" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="NJU-DisSys-2017" />
+      <working_directory value="$PROJECT_DIR$/src/raft" />
+      <framework value="gotest" />
+      <kind value="FILE" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/src/raft/test_test.go" />
       <method v="2" />
     </configuration>
     <configuration name="test_test.go" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
@@ -214,11 +212,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Go Test.test_test.go (1)" />
         <item itemvalue="Go Test.test_test.go" />
         <item itemvalue="Go Test.TestInitialElection in raft (2)" />
         <item itemvalue="Go Test.TestReElection in raft" />
         <item itemvalue="Go Test.TestInitialElection in raft (1)" />
-        <item itemvalue="Go Test.TestInitialElection in raft" />
       </list>
     </recent_temporary>
   </component>
