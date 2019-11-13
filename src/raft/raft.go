@@ -189,6 +189,7 @@ func (rf *Raft) restartTime() {
 	if rf.state == "LEADER" {
 		timeout = time.Millisecond * time.Duration(HeartbeatTime)
 	}
+	// init the election timeout
 	if rf.time == nil {
 		rf.time = time.NewTimer(timeout)
 		go func() {
