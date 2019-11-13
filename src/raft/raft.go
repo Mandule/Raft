@@ -26,9 +26,6 @@ import (
 )
 import "labrpc"
 
-// import "bytes"
-// import "encoding/gob"
-
 const (
 	HeartbeatTime   = 100
 	ElectionMinTime = 150
@@ -61,6 +58,7 @@ type Raft struct {
 	// state a Raft server must maintain.
 
 	//State
+	state string
 	//Persistent state on all servers
 	currentTerm int        //latest term server has seen (initialized to 0 on first boot, increases monotonically)
 	votedFor    int        //candidateId that received vote in current term (or null if none)
@@ -78,13 +76,12 @@ type Raft struct {
 	//votes count
 	voteCount int
 
-	state   string
 	applyCh chan ApplyMsg
-
+	//election timeout
 	time *time.Timer
 }
 
-//	logs
+//	logEntry
 type LogEntry struct {
 	Command interface{}
 	Term    int
@@ -102,12 +99,12 @@ type AppendEntryReply struct {
 func (rf *Raft) GetState() (int, bool) {
 
 	var term int
-	var isleader bool
+	var isLeader bool
 
 	term = rf.currentTerm
-	isleader = rf.state == "LEADER"
+	isLeader = rf.state == "LEADER"
 
-	return term, isleader
+	return term, isLeader
 }
 
 //
@@ -126,9 +123,9 @@ func (rf *Raft) persist() {
 	// rf.persister.SaveRaftState(data)
 	w := new(bytes.Buffer)
 	e := gob.NewEncoder(w)
-	e.Encode(rf.currentTerm)
-	e.Encode(rf.votedFor)
-	e.Encode(rf.logs)
+	_ = e.Encode(rf.currentTerm)
+	_ = e.Encode(rf.votedFor)
+	_ = e.Encode(rf.logs)
 	rf.persister.SaveRaftState(w.Bytes())
 }
 
@@ -145,9 +142,9 @@ func (rf *Raft) readPersist(data []byte) {
 	if data != nil {
 		r := bytes.NewBuffer(data)
 		d := gob.NewDecoder(r)
-		d.Decode(&rf.currentTerm)
-		d.Decode(&rf.votedFor)
-		d.Decode(&rf.logs)
+		_ = d.Decode(&rf.currentTerm)
+		_ = d.Decode(&rf.votedFor)
+		_ = d.Decode(&rf.logs)
 	}
 }
 
@@ -158,12 +155,12 @@ func (rf *Raft) restartTime() {
 	timeSeed := ElectionMinTime + rand.Int63n(ElectionMaxTime-ElectionMinTime)
 	timeout := time.Millisecond * time.Duration(timeSeed)
 	if rf.state == "LEADER" {
-		timeSeed = HeartbeatTime
-		timeout = time.Millisecond * time.Duration(timeSeed)
+		timeout = time.Millisecond * time.Duration(HeartbeatTime)
 	}
 	if rf.time == nil {
 		rf.time = time.NewTimer(timeout)
 		go func() {
+			// endless loop for election timeout
 			for {
 				<-rf.time.C
 				rf.Timeout()
@@ -177,8 +174,9 @@ func (rf *Raft) restartTime() {
 //	when peer timeout, it changes to be a candidate and sentRequestVote
 //
 func (rf *Raft) Timeout() {
-	rf.mu.Lock()
-	defer rf.mu.Unlock()
+	//rf.mu.Lock()
+	//defer rf.mu.Unlock()
+	// when rf is not the leader, then go to candidate and leader election.
 	if rf.state != "LEADER" {
 		rf.state = "CANDIDATE"
 		rf.currentTerm += 1
@@ -195,21 +193,22 @@ func (rf *Raft) Timeout() {
 			args.LastLogTerm = rf.logs[len(rf.logs)-1].Term
 		}
 
-		for peer, _ := range rf.peers {
-			if peer == rf.me {
+		for server, _ := range rf.peers {
+			if server == rf.me {
 				continue
 			}
-			go func(peer int, args RequestVoteArgs) {
+			go func(server int, args RequestVoteArgs) {
 				var reply RequestVoteReply
-				success := rf.peers[peer].Call("Raft.RequestVote", args, &reply)
+				success := rf.peers[server].Call("Raft.RequestVote", args, &reply)
 				if success {
 					rf.countVote(reply)
 				}
-			}(peer, args)
+			}(server, args)
 		}
-	} else {
+	} else { // when rf is the leader, then send heartbeat.
 		rf.SendAppendEntries()
 	}
+	//rf restart the election timeout
 	rf.restartTime()
 }
 
