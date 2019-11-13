@@ -463,6 +463,19 @@ func (rf *Raft) handleAppendEntriesReply(server int, reply AppendEntryReply) {
 }
 
 func (rf *Raft) commit() {
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+
+	i := rf.lastApplied + 1
+	for i <= rf.commitIndex {
+
+		var args ApplyMsg
+		args.Index = i + 1
+		args.Command = rf.logs[i].Command
+		rf.applyCh <- args
+		i++
+	}
+	rf.lastApplied = rf.commitIndex
 }
 
 //

@@ -71,7 +71,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Go Test.test_test.go (1)">
+  <component name="RunManager" selected="Go Test.test_test.go (2)">
     <configuration default="true" type="Applet" factoryName="Applet">
       <option name="HTML_USED" value="false" />
       <option name="WIDTH" value="400" />
@@ -159,17 +159,6 @@
       <predefined_log_file id="idea.log" enabled="true" />
       <method />
     </configuration>
-    <configuration name="TestInitialElection in raft (1)" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
-      <module name="NJU-DisSys-2017" />
-      <working_directory value="$PROJECT_DIR$/src/raft" />
-      <framework value="gotest" />
-      <kind value="PACKAGE" />
-      <package value="raft" />
-      <directory value="$PROJECT_DIR$/" />
-      <filePath value="$PROJECT_DIR$/" />
-      <pattern value="^TestInitialElection$" />
-      <method v="2" />
-    </configuration>
     <configuration name="TestInitialElection in raft (2)" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="NJU-DisSys-2017" />
       <working_directory value="$PROJECT_DIR$/src/raft" />
@@ -201,6 +190,15 @@
       <filePath value="$PROJECT_DIR$/src/raft/test_test.go" />
       <method v="2" />
     </configuration>
+    <configuration name="test_test.go (2)" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="NJU-DisSys-2017" />
+      <working_directory value="$PROJECT_DIR$/src/raft" />
+      <framework value="gotest" />
+      <kind value="FILE" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/src/raft/test_test.go" />
+      <method v="2" />
+    </configuration>
     <configuration name="test_test.go" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="NJU-DisSys-2017" />
       <working_directory value="$PROJECT_DIR$/src/raft" />
@@ -212,11 +210,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Go Test.test_test.go (2)" />
         <item itemvalue="Go Test.test_test.go (1)" />
         <item itemvalue="Go Test.test_test.go" />
         <item itemvalue="Go Test.TestInitialElection in raft (2)" />
         <item itemvalue="Go Test.TestReElection in raft" />
-        <item itemvalue="Go Test.TestInitialElection in raft (1)" />
       </list>
     </recent_temporary>
   </component>
