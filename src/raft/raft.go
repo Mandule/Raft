@@ -196,7 +196,7 @@ func (rf *Raft) restartTime() {
 			// endless loop for election timeout
 			for {
 				<-rf.time.C
-				rf.Timeout()
+				rf.timeout()
 			}
 		}()
 	}
@@ -206,7 +206,7 @@ func (rf *Raft) restartTime() {
 //
 //	when peer timeout, it changes to be a candidate and sentRequestVote
 //
-func (rf *Raft) Timeout() {
+func (rf *Raft) timeout() {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 	// when rf is not the leader, then go to candidate and leader election.
@@ -216,9 +216,9 @@ func (rf *Raft) Timeout() {
 		rf.voteCount = 1
 		rf.votedFor = rf.me
 		rf.persist()
-		rf.SendRequestVote()
+		rf.sendRequestVote()
 	} else { // when rf is the leader, then send heartbeat.
-		rf.SendAppendEntries()
+		rf.sendAppendEntries()
 	}
 	//rf restart the election timeout
 	rf.restartTime()
@@ -227,7 +227,7 @@ func (rf *Raft) Timeout() {
 //
 // example RequestVote RPC handler.
 //
-func (rf *Raft) RequestVote(args RequestVoteArgs, reply *RequestVoteReply) {
+func (rf *Raft) RequestVoteRPC(args RequestVoteArgs, reply *RequestVoteReply) {
 	// Your code here.
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
@@ -284,7 +284,7 @@ func (rf *Raft) RequestVote(args RequestVoteArgs, reply *RequestVoteReply) {
 //
 //	Candidate ask for vote
 //
-func (rf *Raft) SendRequestVote() {
+func (rf *Raft) sendRequestVote() {
 	args := RequestVoteArgs{
 		Term:         rf.currentTerm,
 		CandidateId:  rf.me,
@@ -301,7 +301,7 @@ func (rf *Raft) SendRequestVote() {
 		}
 		go func(server int, args RequestVoteArgs) {
 			var reply RequestVoteReply
-			success := rf.peers[server].Call("Raft.RequestVote", args, &reply)
+			success := rf.peers[server].Call("Raft.RequestVoteRPC", args, &reply)
 			if success {
 				rf.handleRequestVoteReply(reply)
 			}
@@ -344,7 +344,7 @@ func (rf *Raft) handleRequestVoteReply(reply RequestVoteReply) {
 //
 //	AppendEntries
 //
-func (rf *Raft) AppendEntries(args AppendEntryArgs, reply *AppendEntryReply) {
+func (rf *Raft) AppendEntriesRPC(args AppendEntryArgs, reply *AppendEntryReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
@@ -396,7 +396,7 @@ func (rf *Raft) AppendEntries(args AppendEntryArgs, reply *AppendEntryReply) {
 //
 //	leader send append entries to all followers
 //
-func (rf *Raft) SendAppendEntries() {
+func (rf *Raft) sendAppendEntries() {
 	for peer, _ := range rf.peers {
 		if peer == rf.me {
 			continue
@@ -416,7 +416,7 @@ func (rf *Raft) SendAppendEntries() {
 
 		go func(server int, args AppendEntryArgs) {
 			var reply AppendEntryReply
-			success := rf.peers[server].Call("Raft.AppendEntries", args, &reply)
+			success := rf.peers[server].Call("Raft.AppendEntriesRPC", args, &reply)
 			if success {
 				rf.handleAppendEntriesReply(server, reply)
 			}
@@ -459,7 +459,7 @@ func (rf *Raft) handleAppendEntriesReply(server int, reply AppendEntryReply) {
 		}
 	} else {
 		rf.nextIndex[server] = reply.CommitIndex + 1
-		rf.SendAppendEntries()
+		rf.sendAppendEntries()
 	}
 }
 
