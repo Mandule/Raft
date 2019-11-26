@@ -316,6 +316,7 @@ func (rf *Raft) handleRequestVoteReply(reply RequestVoteReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
+	//leader's term is not the latest, back to follower.
 	if reply.Term > rf.currentTerm {
 		rf.currentTerm = reply.Term
 		rf.state = "FOLLOWER"
@@ -333,7 +334,7 @@ func (rf *Raft) handleRequestVoteReply(reply RequestVoteReply) {
 					continue
 				}
 				rf.nextIndex[peer] = len(rf.logs)
-				rf.matchIndex[peer] = -1
+				rf.matchIndex[peer] = 0
 			}
 			rf.restartTime()
 		}
@@ -348,15 +349,19 @@ func (rf *Raft) AppendEntriesRPC(args AppendEntryArgs, reply *AppendEntryReply) 
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
+	//if leader's term is not the latest, tell leader.
 	if args.Term < rf.currentTerm {
 		reply.Success = false
 		reply.Term = rf.currentTerm
 	} else {
+		//candidate should back to follower.
 		rf.state = "FOLLOWER"
-		rf.currentTerm = args.Term
 		rf.votedFor = -1
+		//update local term
+		rf.currentTerm = args.Term
 		reply.Term = args.Term
 
+		//if mismatch
 		if args.PrevLogIndex >= 0 && (len(rf.logs)-1 < args.PrevLogIndex || rf.logs[args.PrevLogIndex].Term != args.PrevLogTerm) {
 			index := len(rf.logs) - 1
 			if index > args.PrevLogIndex {
@@ -372,15 +377,19 @@ func (rf *Raft) AppendEntriesRPC(args AppendEntryArgs, reply *AppendEntryReply) 
 			reply.CommitIndex = index
 			reply.Success = false
 		} else if args.Entries != nil {
+			//log's index and term match with the leader.
 			rf.logs = rf.logs[:args.PrevLogIndex+1]
 			rf.logs = append(rf.logs, args.Entries...)
+			//commit the logs that leader already commit
 			if len(rf.logs)-1 >= args.LeaderCommit {
 				rf.commitIndex = args.LeaderCommit
 				go rf.commit()
 			}
+
 			reply.CommitIndex = len(rf.logs) - 1
 			reply.Success = true
 		} else {
+			//local logs is same as leader logs
 			if len(rf.logs)-1 >= args.LeaderCommit {
 				rf.commitIndex = args.LeaderCommit
 				go rf.commit()
@@ -394,13 +403,14 @@ func (rf *Raft) AppendEntriesRPC(args AppendEntryArgs, reply *AppendEntryReply) 
 }
 
 //
-//	leader send append entries to all followers
-//
+// leader send append entries to all followers
+// done
 func (rf *Raft) sendAppendEntries() {
 	for peer, _ := range rf.peers {
 		if peer == rf.me {
 			continue
 		}
+		//define the massage
 		args := AppendEntryArgs{
 			Term:         rf.currentTerm,
 			LeaderId:     rf.me,
@@ -438,10 +448,12 @@ func (rf *Raft) handleAppendEntriesReply(server int, reply AppendEntryReply) {
 		rf.currentTerm = reply.Term
 		rf.state = "FOLLOWER"
 		rf.votedFor = -1
+		rf.persist()
 		rf.restartTime()
 		return
 	}
 
+	//follower logs match successfully.
 	if reply.Success {
 		rf.nextIndex[server] = reply.CommitIndex + 1
 		rf.matchIndex[server] = reply.CommitIndex
@@ -451,6 +463,7 @@ func (rf *Raft) handleAppendEntriesReply(server int, reply AppendEntryReply) {
 				count++
 			}
 		}
+		//if majority follower commit, leader can commit.
 		if count >= len(rf.peers)/2+1 {
 			if rf.commitIndex < rf.matchIndex[server] && rf.logs[rf.matchIndex[server]].Term == rf.currentTerm {
 				rf.commitIndex = rf.matchIndex[server]
@@ -458,6 +471,7 @@ func (rf *Raft) handleAppendEntriesReply(server int, reply AppendEntryReply) {
 			}
 		}
 	} else {
+		//follower logs do not match
 		rf.nextIndex[server] = reply.CommitIndex + 1
 		rf.sendAppendEntries()
 	}
@@ -469,7 +483,6 @@ func (rf *Raft) commit() {
 
 	i := rf.lastApplied + 1
 	for i <= rf.commitIndex {
-
 		var args ApplyMsg
 		args.Index = i + 1
 		args.Command = rf.logs[i].Command

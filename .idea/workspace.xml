@@ -3,6 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="558ac743-39b1-4d9c-ab46-81873a9bc231" name="Default" comment="update func">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/raft/raft.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/raft/raft.go" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -50,7 +51,7 @@
     <property name="configurable.Project.GOPATH.is.expanded" value="true" />
     <property name="go.import.settings.migrated" value="true" />
     <property name="go.sdk.automatically.set" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../NJU-DisSys-origin" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -71,7 +72,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Go Test.test_test.go">
+  <component name="RunManager" selected="Go Test.test_test.go (2)">
     <configuration default="true" type="Applet" factoryName="Applet">
       <option name="HTML_USED" value="false" />
       <option name="WIDTH" value="400" />
@@ -159,7 +160,7 @@
       <predefined_log_file id="idea.log" enabled="true" />
       <method />
     </configuration>
-    <configuration name="TestInitialElection in raft" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+    <configuration name="TestBasicAgree in raft" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="NJU-DisSys-2017" />
       <working_directory value="$PROJECT_DIR$/src/raft" />
       <framework value="gotest" />
@@ -167,10 +168,10 @@
       <package value="raft" />
       <directory value="$PROJECT_DIR$/" />
       <filePath value="$PROJECT_DIR$/" />
-      <pattern value="^TestInitialElection$" />
+      <pattern value="^TestBasicAgree$" />
       <method v="2" />
     </configuration>
-    <configuration name="test_test.go (2)" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+    <configuration name="test_test.go (1)" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="NJU-DisSys-2017" />
       <working_directory value="$PROJECT_DIR$/src/raft" />
       <framework value="gotest" />
@@ -179,7 +180,7 @@
       <filePath value="$PROJECT_DIR$/src/raft/test_test.go" />
       <method v="2" />
     </configuration>
-    <configuration name="test_test.go (3)" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+    <configuration name="test_test.go (2)" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="NJU-DisSys-2017" />
       <working_directory value="$PROJECT_DIR$/src/raft" />
       <framework value="gotest" />
@@ -208,11 +209,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Go Test.test_test.go (2)" />
+        <item itemvalue="Go Test.TestBasicAgree in raft" />
+        <item itemvalue="Go Test.test_test.go (1)" />
         <item itemvalue="Go Test.test_test.go" />
         <item itemvalue="Go Test.test_test.go (4)" />
-        <item itemvalue="Go Test.test_test.go (3)" />
-        <item itemvalue="Go Test.TestInitialElection in raft" />
-        <item itemvalue="Go Test.test_test.go (2)" />
       </list>
     </recent_temporary>
   </component>
