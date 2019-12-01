@@ -391,6 +391,10 @@ func (rf *Raft) AppendEntriesRPC(args AppendEntryArgs, reply *AppendEntryReply) 
 	rf.persist()
 	rf.restartTime()
 }
+
+//
+// leader send append entries to one follower
+// done
 func (rf *Raft) sendAppendEntry(server int) {
 	//define the massage
 	args := AppendEntryArgs{

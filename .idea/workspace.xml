@@ -4,7 +4,6 @@
     <list default="true" id="558ac743-39b1-4d9c-ab46-81873a9bc231" name="Default" comment="update func">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/raft/raft.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/raft/raft.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/raft/test_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/raft/test_test.go" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -76,7 +75,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Go Test.test_test.go (4)">
+  <component name="RunManager">
     <configuration default="true" type="Applet" factoryName="Applet">
       <option name="HTML_USED" value="false" />
       <option name="WIDTH" value="400" />
@@ -164,66 +163,6 @@
       <predefined_log_file id="idea.log" enabled="true" />
       <method />
     </configuration>
-    <configuration name="TestBasicAgree in raft (1)" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
-      <module name="NJU-DisSys-2017" />
-      <working_directory value="$PROJECT_DIR$/src/raft" />
-      <framework value="gotest" />
-      <kind value="PACKAGE" />
-      <package value="raft" />
-      <directory value="$PROJECT_DIR$/" />
-      <filePath value="$PROJECT_DIR$/" />
-      <pattern value="^TestBasicAgree$" />
-      <method v="2" />
-    </configuration>
-    <configuration name="TestPersist1 in raft" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
-      <module name="NJU-DisSys-2017" />
-      <working_directory value="$PROJECT_DIR$/src/raft" />
-      <framework value="gotest" />
-      <kind value="PACKAGE" />
-      <package value="raft" />
-      <directory value="$PROJECT_DIR$/" />
-      <filePath value="$PROJECT_DIR$/" />
-      <pattern value="^TestPersist1$" />
-      <method v="2" />
-    </configuration>
-    <configuration name="TestPersist2 in raft" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
-      <module name="NJU-DisSys-2017" />
-      <working_directory value="$PROJECT_DIR$/src/raft" />
-      <framework value="gotest" />
-      <kind value="PACKAGE" />
-      <package value="raft" />
-      <directory value="$PROJECT_DIR$/" />
-      <filePath value="$PROJECT_DIR$/" />
-      <pattern value="^TestPersist2$" />
-      <method v="2" />
-    </configuration>
-    <configuration name="test_test.go (3)" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
-      <module name="NJU-DisSys-2017" />
-      <working_directory value="$PROJECT_DIR$/src/raft" />
-      <framework value="gotest" />
-      <kind value="FILE" />
-      <directory value="$PROJECT_DIR$/" />
-      <filePath value="$PROJECT_DIR$/src/raft/test_test.go" />
-      <method v="2" />
-    </configuration>
-    <configuration name="test_test.go (4)" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
-      <module name="NJU-DisSys-2017" />
-      <working_directory value="$PROJECT_DIR$/src/raft" />
-      <framework value="gotest" />
-      <kind value="FILE" />
-      <directory value="$PROJECT_DIR$/" />
-      <filePath value="$PROJECT_DIR$/src/raft/test_test.go" />
-      <method v="2" />
-    </configuration>
-    <recent_temporary>
-      <list>
-        <item itemvalue="Go Test.test_test.go (4)" />
-        <item itemvalue="Go Test.TestBasicAgree in raft (1)" />
-        <item itemvalue="Go Test.TestPersist2 in raft" />
-        <item itemvalue="Go Test.TestPersist1 in raft" />
-        <item itemvalue="Go Test.test_test.go (3)" />
-      </list>
-    </recent_temporary>
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
