@@ -121,13 +121,14 @@ type AppendEntryArgs struct {
 
 // Append Entries Reply
 type AppendEntryReply struct {
-	Term        int
-	Success     bool
-	CommitIndex int
+	Term       int
+	MatchIndex int
+	Success    bool
 }
 
 // return currentTerm and whether this server
 // believes it is the leader.
+// done
 func (rf *Raft) GetState() (int, bool) {
 
 	var term int
@@ -143,16 +144,8 @@ func (rf *Raft) GetState() (int, bool) {
 // save Raft's persistent state to stable storage,
 // where it can later be retrieved after a crash and restart.
 // see paper's Figure 2 for a description of what should be persistent.
-//
+// done
 func (rf *Raft) persist() {
-	// Your code here.
-	// Example:
-	// w := new(bytes.Buffer)
-	// e := gob.NewEncoder(w)
-	// e.Encode(rf.xxx)
-	// e.Encode(rf.yyy)
-	// data := w.Bytes()
-	// rf.persister.SaveRaftState(data)
 	w := new(bytes.Buffer)
 	e := gob.NewEncoder(w)
 	_ = e.Encode(rf.currentTerm)
@@ -163,14 +156,8 @@ func (rf *Raft) persist() {
 
 //
 // restore previously persisted state.
-//
+// done
 func (rf *Raft) readPersist(data []byte) {
-	// Your code here.
-	// Example:
-	// r := bytes.NewBuffer(data)
-	// d := gob.NewDecoder(r)
-	// d.Decode(&rf.xxx)
-	// d.Decode(&rf.yyy)
 	if data != nil {
 		r := bytes.NewBuffer(data)
 		d := gob.NewDecoder(r)
@@ -181,8 +168,8 @@ func (rf *Raft) readPersist(data []byte) {
 }
 
 //
-//	restart the election timeout
-//
+// restart the election timeout
+// done
 func (rf *Raft) restartTime() {
 	timeSeed := ElectionMinTime + rand.Int63n(ElectionMaxTime-ElectionMinTime)
 	timeout := time.Millisecond * time.Duration(timeSeed)
@@ -204,8 +191,8 @@ func (rf *Raft) restartTime() {
 }
 
 //
-//	when peer timeout, it changes to be a candidate and sentRequestVote
-//
+// when peer timeout, follower and candidate -> candidate, leader -> send heart beat.
+// done
 func (rf *Raft) timeout() {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
@@ -226,7 +213,7 @@ func (rf *Raft) timeout() {
 
 //
 // example RequestVote RPC handler.
-//
+// done
 func (rf *Raft) RequestVoteRPC(args RequestVoteArgs, reply *RequestVoteReply) {
 	// Your code here.
 	rf.mu.Lock()
@@ -282,8 +269,8 @@ func (rf *Raft) RequestVoteRPC(args RequestVoteArgs, reply *RequestVoteReply) {
 }
 
 //
-//	Candidate ask for vote
-//
+// Candidate ask for vote
+// done
 func (rf *Raft) sendRequestVote() {
 	args := RequestVoteArgs{
 		Term:         rf.currentTerm,
@@ -311,7 +298,7 @@ func (rf *Raft) sendRequestVote() {
 
 //
 // vote result handler
-//
+// done
 func (rf *Raft) handleRequestVoteReply(reply RequestVoteReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
@@ -321,6 +308,7 @@ func (rf *Raft) handleRequestVoteReply(reply RequestVoteReply) {
 		rf.currentTerm = reply.Term
 		rf.state = "FOLLOWER"
 		rf.votedFor = -1
+		rf.persist()
 		rf.restartTime()
 		return
 	}
@@ -336,6 +324,7 @@ func (rf *Raft) handleRequestVoteReply(reply RequestVoteReply) {
 				rf.nextIndex[peer] = len(rf.logs)
 				rf.matchIndex[peer] = 0
 			}
+			rf.persist()
 			rf.restartTime()
 		}
 	}
@@ -343,8 +332,8 @@ func (rf *Raft) handleRequestVoteReply(reply RequestVoteReply) {
 }
 
 //
-//	AppendEntries
-//
+// AppendEntries
+// done
 func (rf *Raft) AppendEntriesRPC(args AppendEntryArgs, reply *AppendEntryReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
@@ -361,45 +350,69 @@ func (rf *Raft) AppendEntriesRPC(args AppendEntryArgs, reply *AppendEntryReply) 
 		rf.currentTerm = args.Term
 		reply.Term = args.Term
 
-		//if mismatch
 		if args.PrevLogIndex >= 0 && (len(rf.logs)-1 < args.PrevLogIndex || rf.logs[args.PrevLogIndex].Term != args.PrevLogTerm) {
+			//if follower do not match
 			index := len(rf.logs) - 1
 			if index > args.PrevLogIndex {
 				index = args.PrevLogIndex
 			}
-
+			//set the index as the local logsIndex has the same term as prevLogTerm
 			for index >= 0 {
 				if args.PrevLogTerm == rf.logs[index].Term {
 					break
 				}
 				index--
 			}
-			reply.CommitIndex = index
+			reply.MatchIndex = index
 			reply.Success = false
 		} else if args.Entries != nil {
 			//log's index and term match with the leader.
 			rf.logs = rf.logs[:args.PrevLogIndex+1]
+			//cover the local logs with Entries
 			rf.logs = append(rf.logs, args.Entries...)
 			//commit the logs that leader already commit
-			if len(rf.logs)-1 >= args.LeaderCommit {
+			if args.LeaderCommit > rf.commitIndex && len(rf.logs)-1 >= args.LeaderCommit {
 				rf.commitIndex = args.LeaderCommit
 				go rf.commit()
 			}
-
-			reply.CommitIndex = len(rf.logs) - 1
+			reply.MatchIndex = len(rf.logs) - 1
 			reply.Success = true
 		} else {
 			//local logs is same as leader logs
-			if len(rf.logs)-1 >= args.LeaderCommit {
+			//commit the logs that leader already commit
+			if args.LeaderCommit > rf.commitIndex && len(rf.logs)-1 >= args.LeaderCommit {
 				rf.commitIndex = args.LeaderCommit
 				go rf.commit()
 			}
-			reply.CommitIndex = args.LeaderCommit
+			reply.MatchIndex = args.LeaderCommit
 			reply.Success = true
 		}
 	}
 	rf.persist()
 	rf.restartTime()
+}
+func (rf *Raft) sendAppendEntry(server int) {
+	//define the massage
+	args := AppendEntryArgs{
+		Term:         rf.currentTerm,
+		LeaderId:     rf.me,
+		PrevLogIndex: rf.nextIndex[server] - 1,
+		LeaderCommit: rf.commitIndex,
+	}
+	if args.PrevLogIndex >= 0 {
+		args.PrevLogTerm = rf.logs[args.PrevLogIndex].Term
+	}
+	if rf.nextIndex[server] < len(rf.logs) {
+		args.Entries = rf.logs[rf.nextIndex[server]:]
+	}
+
+	go func(server int, args AppendEntryArgs) {
+		var reply AppendEntryReply
+		success := rf.peers[server].Call("Raft.AppendEntriesRPC", args, &reply)
+		if success {
+			rf.handleAppendEntriesReply(server, reply)
+		}
+	}(server, args)
 }
 
 //
@@ -410,27 +423,7 @@ func (rf *Raft) sendAppendEntries() {
 		if peer == rf.me {
 			continue
 		}
-		//define the massage
-		args := AppendEntryArgs{
-			Term:         rf.currentTerm,
-			LeaderId:     rf.me,
-			PrevLogIndex: rf.nextIndex[peer] - 1,
-		}
-		if args.PrevLogIndex >= 0 {
-			args.PrevLogTerm = rf.logs[args.PrevLogIndex].Term
-		}
-		if rf.nextIndex[peer] < len(rf.logs) {
-			args.Entries = rf.logs[rf.nextIndex[peer]:]
-		}
-		args.LeaderCommit = rf.commitIndex
-
-		go func(server int, args AppendEntryArgs) {
-			var reply AppendEntryReply
-			success := rf.peers[server].Call("Raft.AppendEntriesRPC", args, &reply)
-			if success {
-				rf.handleAppendEntriesReply(server, reply)
-			}
-		}(peer, args)
+		rf.sendAppendEntry(peer)
 	}
 }
 
@@ -443,7 +436,7 @@ func (rf *Raft) handleAppendEntriesReply(server int, reply AppendEntryReply) {
 	if rf.state != "LEADER" {
 		return
 	}
-
+	//leader's term is old, back to follower
 	if reply.Term > rf.currentTerm {
 		rf.currentTerm = reply.Term
 		rf.state = "FOLLOWER"
@@ -455,25 +448,28 @@ func (rf *Raft) handleAppendEntriesReply(server int, reply AppendEntryReply) {
 
 	//follower logs match successfully.
 	if reply.Success {
-		rf.nextIndex[server] = reply.CommitIndex + 1
-		rf.matchIndex[server] = reply.CommitIndex
+		//update follower's nextIndex to a new logIndex
+		rf.nextIndex[server] = reply.MatchIndex + 1
+		//recommend the matchIndex
+		rf.matchIndex[server] = reply.MatchIndex
 		count := 1
 		for peer, _ := range rf.peers {
-			if peer != rf.me && rf.matchIndex[peer] >= rf.matchIndex[server] {
+			if peer != rf.me && rf.matchIndex[peer] >= reply.MatchIndex {
 				count++
 			}
 		}
 		//if majority follower commit, leader can commit.
 		if count >= len(rf.peers)/2+1 {
-			if rf.commitIndex < rf.matchIndex[server] && rf.logs[rf.matchIndex[server]].Term == rf.currentTerm {
-				rf.commitIndex = rf.matchIndex[server]
+			//leader can just commit the logs in currentTerm, old term's log can not commit directly
+			if rf.commitIndex < reply.MatchIndex && rf.logs[reply.MatchIndex].Term == rf.currentTerm {
+				rf.commitIndex = reply.MatchIndex
 				go rf.commit()
 			}
 		}
 	} else {
-		//follower logs do not match
-		rf.nextIndex[server] = reply.CommitIndex + 1
-		rf.sendAppendEntries()
+		//follower logs do not match, reply.matchIndex do not means match
+		rf.nextIndex[server] = reply.MatchIndex + 1
+		rf.sendAppendEntry(server)
 	}
 }
 
